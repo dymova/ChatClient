@@ -1,7 +1,6 @@
 package ru.nsu.ccfit.dymova.chatclient;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,21 +16,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        if(convertView == null) {
+        if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_record_message, null);
         }
         Message msg = getItem(position);
 
-//        TextView authorTextView = (TextView) convertView.findViewById(R.id.text_view_author);
-//        Log.d("author", String.valueOf(authorTextView));
-//        authorTextView.setText(msg.getAuthor());
-
         TextView contentTextView = (TextView) convertView.findViewById(R.id.text_view_content);
 
         contentTextView.setText(msg.getAuthor() + ":" + msg.getText());
-
-
-
 
 
         return contentTextView;

@@ -4,13 +4,13 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 import org.simpleframework.xml.core.Persister;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -20,8 +20,6 @@ import java.util.concurrent.Executors;
 public class ChatService extends Service {
 
     public static final String LOG_TAG = "MyService";
-//    public static final String HOST = "http://localhost:8080/api/update";
-//    public static final String HOST = "http://192.168.56.1:8080/api/update";
     public static final String HOST = "http://10.0.0.30:8080/api/update";
     private ExecutorService es;
     private static Persister serializer;
@@ -30,8 +28,6 @@ public class ChatService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Toast t = Toast.makeText(getApplicationContext(), "create", Toast.LENGTH_SHORT);
-        t.show();
         Log.d(LOG_TAG, "MyService onCreate");
         es = Executors.newFixedThreadPool(1);
         serializer = new Persister();
@@ -45,7 +41,7 @@ public class ChatService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d("service", "MyService onStartCommand");
-        int lastId = intent.getIntExtra("id", 0);
+        int lastId = intent.getIntExtra("id", -1);
         es.execute(new Task(startId, lastId));
 //        return super.onStartCommand(intent, flags, startId);
         return START_REDELIVER_INTENT;
@@ -69,22 +65,17 @@ public class ChatService extends Service {
             cleanArrays();
 
             Log.d(LOG_TAG, "Task# run" + startId);
-//            //todo remove
-//            authors.add("user1");
-//            texts.add("hi! lalala");
-//            ids.add(0);
 
             try {
-                UpdateResponseMessage response = null;//                getUpdate(lastId);
+                UpdateResponseMessage response = getUpdate(lastId);
 
-                if(response != null && !response.messages.isEmpty()) {
-                    for (Message  m: response.messages) {
-                        Toast t = Toast.makeText(getBaseContext(), m.getText(), Toast.LENGTH_SHORT);
-                        t.show();
+                if (response != null && !response.messages.isEmpty()) {
+                    for (Message m : response.messages) {
                         authors.add(m.getAuthor());
                         texts.add(m.getText());
                         ids.add(m.getId());
                     }
+                    Log.d(LOG_TAG, "size : " + authors.size());
                     Intent intent = new Intent(MainActivity.UPDATE_ACTION);
                     intent.putStringArrayListExtra(UpdateReceiver.AUTHORS, authors);
                     intent.putStringArrayListExtra(UpdateReceiver.TEXTS, texts);
@@ -108,32 +99,32 @@ public class ChatService extends Service {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
+
             int responseCode = connection.getResponseCode();
 
             Log.d(LOG_TAG, "\nSending 'GET' request to URL : " + url);
             Log.d(LOG_TAG, "Response Code : " + responseCode);
-            Toast t = Toast.makeText(getBaseContext(), responseCode, Toast.LENGTH_SHORT);
-            t.show();
 
             BufferedReader in = new BufferedReader(new InputStreamReader(
                     connection.getInputStream()));
+            Log.d(LOG_TAG, String.valueOf("Get stream : " + in!=null));
+
             String line;
-            StringBuffer response = new StringBuffer();
+            StringBuilder response = new StringBuilder();
             while ((line = in.readLine()) != null) {
-                Log.d(LOG_TAG, line);
                 response.append(line);
             }
             in.close();
 
 
-            if(!serializer.validate(Message.class, response.toString())) {
+            String text = response.toString();
+            Reader reader = new StringReader(text);
+            if (!serializer.validate(UpdateResponseMessage.class, response.toString())) {
                 return null;
             }
 
-            UpdateResponseMessage newMessages = serializer
-                    .read(UpdateResponseMessage.class, response.toString());
-
-            return newMessages;
+            return serializer
+                    .read(UpdateResponseMessage.class, reader, false);
         }
 
         void stop() {

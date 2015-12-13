@@ -1,12 +1,17 @@
 package ru.nsu.ccfit.dymova.chatclient;
 
-import org.simpleframework.xml.Attribute;
+import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Root;
 
-@Root(name="Message")
+@Root(name = "Message")
 public class Message {
-    private final String author;
-    private final String text;
+    @Element(name = "Author")
+    private String author;
+
+    @Element(name = "Text")
+    private String text;
+
+    @Element(name = "Id")
     private int id;
 
     public Message(String author, String text, int id) {
@@ -15,19 +20,22 @@ public class Message {
         this.id = id;
     }
 
-    @Attribute(name="Author")
+    public Message() {
+    }
+
     public String getAuthor() {
         return author;
     }
 
-    @Attribute(name="Text")
     public String getText() {
         return text;
     }
 
-    @Attribute(name="Id")
     public int getId() {
         return id;
     }
-}
 
+    public void setId(int id) {
+        this.id = id;
+    }
+}

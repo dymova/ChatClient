@@ -7,9 +7,9 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
         messages.add(new Message("user1", "heeelooooooo!", -1));
 
         ListView listView = (ListView) findViewById(R.id.list_messages);
-        adapter = new MessageAdapter(this, R.layout.list_record_message , messages);
+        adapter = new MessageAdapter(this, R.layout.list_record_message, messages);
         listView.setAdapter(adapter);
 
 
@@ -52,15 +52,12 @@ public class MainActivity extends AppCompatActivity {
         startService(new Intent(this, ChatService.class));
 
         final Context c = this;
-        Toast t = Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT);
-        t.show();
-
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 while (true) {
-                    int lastId = messages.isEmpty() ? 0 : messages.get(messages.size() - 1).getId();
+                    int lastId = messages.isEmpty() ? -1 : messages.get(messages.size() - 1).getId();
                     startService(new Intent(c, ChatService.class).putExtra("id", lastId));
                     try {
                         sleep(2000);
@@ -85,7 +82,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }

@@ -3,6 +3,7 @@ package ru.nsu.ccfit.dymova.chatclient;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,4 +32,6 @@ public class UpdateReceiver extends BroadcastReceiver {
 
         mainActivity.updateMessage(newMessages);
     }
+
+
 }

@@ -1,10 +1,12 @@
 package ru.nsu.ccfit.dymova.chatclient;
 
+import android.annotation.TargetApi;
 import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
@@ -13,17 +15,18 @@ import android.widget.Toast;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 public class NewMessageActivity extends AppCompatActivity {
+    public static final String LOG_TAG = "NEW_MESSAGE";
+
     public static final String HOST = "http://10.0.0.30:8080/api/message";
 
     private EditText nameEditText;
     private EditText textEditText;
     private static Persister serializer;
-
 
 
     @Override
@@ -54,19 +57,14 @@ public class NewMessageActivity extends AppCompatActivity {
                 String text = textEditText.getText().toString();
                 Message message = new Message(name, text, 0); //todo
 
-                if(name.isEmpty() || text.isEmpty()) {
+                if (name.isEmpty() || text.isEmpty()) {
                     Toast t = Toast.makeText(this, "Please, fill all fields.", Toast.LENGTH_SHORT);
                     t.show();
                     return true;
                 }
 
-                try {
-                    saveMessageOnServer(message);
-                } catch (Exception e) {
-                    Toast t = Toast.makeText(this, "save error", Toast.LENGTH_SHORT);
-                    t.show();
-                    e.printStackTrace();
-                }
+                Task task = new Task(message);
+                task.execute();
 
                 Intent intent = new Intent(this, MainActivity.class);
                 startActivity(intent);
@@ -77,24 +75,38 @@ public class NewMessageActivity extends AppCompatActivity {
         }
     }
 
-    private void saveMessageOnServer(Message message) throws Exception {
-        URL url = new URL(HOST);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    class Task extends AsyncTask<Void, Void, Void> {
+        private final Message message;
 
-        connection.setRequestMethod("POST");
-        connection.setDoOutput(true);
+        Task(Message message) {
+            this.message = message;
+        }
 
-        Toast t = Toast.makeText(getBaseContext(), "connection establish", Toast.LENGTH_SHORT);
-        t.show();
+        @TargetApi(Build.VERSION_CODES.KITKAT)
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                HttpURLConnection connection = (HttpURLConnection) new URL("http", "10.0.0.30", 8080, "/api/message").openConnection();
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("User-agent", "TestClient");
 
-        OutputStream out = connection.getOutputStream();
+                connection.setDoOutput(true);
+                try (OutputStream outputStream = connection.getOutputStream()) {
+                    Persister serializer = new Persister();
+                    StringWriter writer = new StringWriter();
 
-        t = Toast.makeText(getBaseContext(), "get stream", Toast.LENGTH_SHORT);
-        t.show();
+                    serializer.write(message, writer);
 
-        serializer.write(message, out);
-        out.flush();
-        out.close();
+                    outputStream.write(writer.toString().getBytes());
+                }
+                System.out.println(connection.getResponseCode());
+            } catch (Exception e) {
+                Toast t = Toast.makeText(getApplicationContext(), "save error", Toast.LENGTH_SHORT);
+                t.show();
+                e.printStackTrace();
+            }
 
+            return null;
+        }
     }
 }
